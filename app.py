@@ -18,6 +18,7 @@ uploaded = st.file_uploader(
 if uploaded:
 
     df = parse_excel(uploaded)
+    st.write(df[["Task", "Progress_raw", "Progress"]])
 
     st.sidebar.header("Filters")
 
