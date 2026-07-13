@@ -10,19 +10,35 @@ def make_gantt(df, color="Assigned"):
         y="Task",
         color=color,
         hover_data=[
-            "Assigned",
             "Phase",
+            "Assigned",
             "Progress",
+            "Start",
+            "Finish"
         ],
     )
 
-    fig.update_yaxes(autorange="reversed")
+    # Task order: first task at the top
+    fig.update_yaxes(
+        autorange="reversed",
+        tickfont=dict(size=10)
+    )
 
+    # Compact layout
     fig.update_layout(
-        height=800,
-        legend_title=color,
-        xaxis_title="Date",
-        yaxis_title="",
+        height=max(400, len(df) * 35),
+        margin=dict(
+            l=180,
+            r=20,
+            t=40,
+            b=40
+        ),
+        xaxis=dict(
+            tickformat="%d %b",
+            tickangle=0
+        ),
+        bargap=0.35,
+        legend_title_text=color
     )
 
     return fig
