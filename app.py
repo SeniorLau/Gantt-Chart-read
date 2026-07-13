@@ -49,7 +49,7 @@ if uploaded:
         ]
     )
 
-    fig = make_gantt(df, color)
+    fig = make_gantt(df)
 
     st.plotly_chart(
         fig,
