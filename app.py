@@ -18,13 +18,7 @@ uploaded = st.file_uploader(
 if uploaded:
 
     df = parse_excel(uploaded)
-    st.write(
-    df[[
-        "Task",
-        "Progress_raw",
-        "Progress"
-    ]]
-)
+
 
     if df.empty:
         st.error("No tasks detected in Excel. Check the template structure.")
