@@ -12,6 +12,7 @@ def parse_excel(filename):
 
     for row in ws.iter_rows(values_only=True):
 
+        # Take first five columns only
         values = list(row[:5])
 
         while len(values) < 5:
@@ -19,11 +20,11 @@ def parse_excel(filename):
 
         task, assigned, progress, start, end = values
 
-        # skip empty rows
+        # Ignore completely empty rows
         if all(v is None for v in values):
             continue
 
-        # detect phase header
+        # Detect phase headers
         if (
             task
             and assigned is None
@@ -34,18 +35,25 @@ def parse_excel(filename):
             phase = str(task).strip()
             continue
 
-        # skip template titles
-        if start is None or end is None:
+        # Convert dates safely
+        try:
+            start_date = pd.to_datetime(start, dayfirst=True)
+            end_date = pd.to_datetime(end, dayfirst=True)
+        except Exception:
+            continue
+
+        # Ignore rows without a valid task
+        if task is None:
             continue
 
         tasks.append(
             {
                 "Phase": phase,
-                "Task": task,
+                "Task": str(task).strip(),
                 "Assigned": assigned,
                 "Progress": progress,
-                "Start": pd.to_datetime(start),
-                "Finish": pd.to_datetime(end),
+                "Start": start_date,
+                "Finish": end_date,
             }
         )
 
