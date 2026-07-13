@@ -7,54 +7,76 @@ def parse_excel(filename):
     wb = load_workbook(filename, data_only=True)
     ws = wb.active
 
-    phase = None
     tasks = []
+    phase = None
+
+    header_found = False
 
     for row in ws.iter_rows(values_only=True):
 
-        # Take first five columns only
-        values = list(row[:5])
+        b = row[1] if len(row) > 1 else None
+        c = row[2] if len(row) > 2 else None
+        d = row[3] if len(row) > 3 else None
+        e = row[4] if len(row) > 4 else None
+        f = row[5] if len(row) > 5 else None
 
-        while len(values) < 5:
-            values.append(None)
 
-        task, assigned, progress, start, end = values
-
-        # Ignore completely empty rows
-        if all(v is None for v in values):
-            continue
-
-        # Detect phase headers
+        # Find the real header row
         if (
-            task
-            and assigned is None
-            and progress is None
-            and start is None
-            and end is None
+            str(b).strip() == "TAAK"
+            and str(c).strip().startswith("TOEGEWEZEN")
         ):
-            phase = str(task).strip()
+            header_found = True
             continue
 
-        # Convert dates safely
+
+        if not header_found:
+            continue
+
+
+        # Ignore empty rows
+        if b is None:
+            continue
+
+
+        # Ignore footer
+        if "Voeg nieuwe rijen" in str(b):
+            break
+
+
+        # Convert dates
         try:
-            start_date = pd.to_datetime(start, dayfirst=True)
-            end_date = pd.to_datetime(end, dayfirst=True)
+            start = pd.to_datetime(e, dayfirst=True)
+            finish = pd.to_datetime(f, dayfirst=True)
+
         except Exception:
+            start = None
+            finish = None
+
+
+        # Phase row
+        if (
+            b
+            and start is None
+            and finish is None
+        ):
+            phase = str(b).strip()
             continue
 
-        # Ignore rows without a valid task
-        if task is None:
-            continue
 
-        tasks.append(
-            {
-                "Phase": phase,
-                "Task": str(task).strip(),
-                "Assigned": assigned,
-                "Progress": progress,
-                "Start": start_date,
-                "Finish": end_date,
-            }
-        )
+        # Task row
+        if start is not None and finish is not None:
+
+            tasks.append(
+                {
+                    "Phase": phase,
+                    "Task": str(b).strip(),
+                    "Assigned": c,
+                    "Progress": d,
+                    "Start": start,
+                    "Finish": finish,
+                }
+            )
+
 
     return pd.DataFrame(tasks)
