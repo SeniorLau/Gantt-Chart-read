@@ -45,7 +45,7 @@ def parse_excel(filename):
     wb = load_workbook(
     filename,
     data_only=False
-)
+    )
 
     ws = wb.active
 
