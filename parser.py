@@ -9,10 +9,9 @@ def parse_excel(filename):
 
     tasks = []
     phase = None
-
     header_found = False
 
-    for row in ws.iter_rows(values_only=True):
+    for row_number, row in enumerate(ws.iter_rows(values_only=True), start=1):
 
         b = row[1] if len(row) > 1 else None
         c = row[2] if len(row) > 2 else None
@@ -21,10 +20,10 @@ def parse_excel(filename):
         f = row[5] if len(row) > 5 else None
 
 
-        # Find the real header row
+        # find table header
         if (
             str(b).strip() == "TAAK"
-            and str(c).strip().startswith("TOEGEWEZEN")
+            and "TOEGEWEZEN" in str(c)
         ):
             header_found = True
             continue
@@ -34,38 +33,45 @@ def parse_excel(filename):
             continue
 
 
-        # Ignore empty rows
+        # stop at end
+        if b and "Voeg nieuwe rijen" in str(b):
+            break
+
+
+        # ignore empty
         if b is None:
             continue
 
 
-        # Ignore footer
-        if "Voeg nieuwe rijen" in str(b):
-            break
+        # try dates
+        start = pd.to_datetime(
+            e,
+            dayfirst=True,
+            errors="coerce"
+        )
+
+        finish = pd.to_datetime(
+            f,
+            dayfirst=True,
+            errors="coerce"
+        )
 
 
-        # Convert dates
-        try:
-            start = pd.to_datetime(e, dayfirst=True)
-            finish = pd.to_datetime(f, dayfirst=True)
-
-        except Exception:
-            start = None
-            finish = None
-
-
-        # Phase row
+        # phase
         if (
-            b
-            and start is None
-            and finish is None
+            pd.isna(start)
+            and pd.isna(finish)
+            and b
         ):
             phase = str(b).strip()
             continue
 
 
-        # Task row
-        if start is not None and finish is not None:
+        # task
+        if (
+            not pd.isna(start)
+            and not pd.isna(finish)
+        ):
 
             tasks.append(
                 {
@@ -79,4 +85,6 @@ def parse_excel(filename):
             )
 
 
-    return pd.DataFrame(tasks)
+    df = pd.DataFrame(tasks)
+
+    return df
