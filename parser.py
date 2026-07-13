@@ -9,18 +9,17 @@ def normalize_progress(value):
 
     try:
 
-        # Excel value entered as 100 and formatted as %
-        if isinstance(value, (int, float)):
-            return f"{round(value)}%"
+        value = float(value)
 
-        text = str(value).strip()
-        text = text.replace("%", "")
+        # Excel percentage format:
+        # 1.0 = 100%
+        if 0 <= value <= 1:
+            value = value * 100
 
-        return f"{round(float(text))}%"
+        return f"{round(value)}%"
 
     except Exception:
         return "0%"
-
 
 
 def parse_excel(filename):
@@ -127,8 +126,7 @@ def parse_excel(filename):
                         else "Unknown"
                     ),
 
-                    "Progress": normalize_progress(
-                        progress
+                    "Progress": normalize_progress(progress),
                     ),
 
                     "Start": start_date,
