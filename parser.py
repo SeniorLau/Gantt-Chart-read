@@ -151,24 +151,28 @@ def parse_excel(filename):
         ):
 
             tasks.append(
-                {
-                    "Phase": phase,
+    {
+        "Phase": phase,
 
-                    "Task": str(b).strip(),
+        "Task": str(b).strip(),
 
-                    "Assigned": (
-                        str(c).strip()
-                        if c
-                        else "Unknown"
-                    ),
+        "Assigned": (
+            str(c).strip()
+            if c
+            else "Unknown"
+        ),
 
-                    "Progress": normalize_progress(d),
+        # keep original Excel value for checking
+        "Progress_raw": d,
 
-                    "Start": start,
+        # formatted progress for chart/table
+        "Progress": normalize_progress(d),
 
-                    "Finish": finish,
-                }
-            )
+        "Start": start,
+
+        "Finish": finish,
+    }
+)
 
 
 
