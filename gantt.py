@@ -7,54 +7,69 @@ def make_gantt(df, color_by="Assigned"):
     df = df.copy()
 
 
-    # Convert progress to numeric
-    df["Progress_num"] = (
-    df["Progress"]
-    .str.replace("%","")
-    .astype(float)
-    )
+    # Convert progress
 
-    df.loc[
-    df["Progress_num"] == 100,
-    "Color"
-    ] = "Completed"
+    df["Progress_num"] = (
+        df["Progress"]
+        .astype(str)
+        .str.replace("%", "", regex=False)
+        .astype(float)
+    )
 
 
     # Make one-day tasks visible
+
     df["Display_Finish"] = df["Finish"]
 
     one_day = df["Start"] == df["Finish"]
 
-    df.loc[one_day, "Display_Finish"] = (
+    df.loc[
+        one_day,
+        "Display_Finish"
+    ] = (
         df.loc[one_day, "Finish"]
         + pd.Timedelta(hours=12)
     )
 
 
-    # Select coloring mode
-    if color_by not in ["Assigned", "Phase"]:
-        color_by = "Assigned"
+    # Select grouping
+
+    if color_by == "Phase":
+
+        df["Color_group"] = (
+            df["Phase"]
+            .fillna("No phase")
+            .astype(str)
+        )
+
+    else:
+
+        df["Color_group"] = (
+            df["Assigned"]
+            .fillna("Unknown")
+            .astype(str)
+        )
 
 
-    df["Color"] = df[color_by].fillna("Unknown").astype(str)
+    # Completed tasks get separate group
 
+    df["Display_color"] = df["Color_group"]
 
-    # Completed tasks override color
     df.loc[
         df["Progress_num"] >= 100,
-        "Color"
+        "Display_color"
     ] = "✓ Completed"
 
 
 
-    # Add progress to task name
+    # Task label
+
     df["Task_label"] = (
-        df["Task"].astype(str)
+        df["Task"]
         + " ("
-        + df["Progress"].astype(str)
+        + df["Progress"]
         + ")"
     )
-
 
 
     fig = px.timeline(
@@ -62,72 +77,61 @@ def make_gantt(df, color_by="Assigned"):
         x_start="Start",
         x_end="Display_Finish",
         y="Task_label",
-        color="Color",
-        hover_data={
-            "Phase": True,
-            "Assigned": True,
-            "Progress": True,
-            "Start": True,
-            "Finish": True
-        }
+        color="Display_color",
+        hover_data=[
+            "Phase",
+            "Assigned",
+            "Progress",
+            "Start",
+            "Finish"
+        ]
     )
 
 
-    # Put first task on top
+    # Reverse order
+
     fig.update_yaxes(
         autorange="reversed",
-        showgrid=True,
-        gridwidth=1,
-        tickfont=dict(size=10)
+        showgrid=True
     )
 
 
-    # Daily timeline
+    # Daily grid
+
     fig.update_xaxes(
         dtick="D1",
-        tickformat="%d\n%b",
-        showgrid=True,
-        gridwidth=1,
-        tickfont=dict(size=9)
+        tickformat="%d %b",
+        showgrid=True
     )
 
-
-
-    # Compact layout
 
     fig.update_layout(
 
         height=max(
-            400,
-            len(df) * 32
+            450,
+            len(df)*35
         ),
 
         margin=dict(
-            l=200,
+            l=250,
             r=20,
             t=40,
-            b=70
+            b=80
         ),
 
-        bargap=0.25,
+        bargap=0.3,
 
-        plot_bgcolor="white",
-
-        legend_title_text=color_by,
-
-        hovermode="closest"
+        legend_title_text=color_by
     )
 
 
-
-    # Completed tasks green
+    # Force completed bars green
 
     for trace in fig.data:
 
         if trace.name == "✓ Completed":
 
             trace.marker.color = "green"
-
 
 
     return fig
