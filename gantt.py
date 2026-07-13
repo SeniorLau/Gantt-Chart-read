@@ -24,7 +24,7 @@ def make_gantt(df):
         + pd.Timedelta(hours=12)
     )
 
-    # Create color category
+    # Color by person
     df["Color"] = df["Assigned"].astype(str)
 
     # Completed tasks become green
@@ -50,24 +50,8 @@ def make_gantt(df):
     )
 
 
-    # Force completed color to green
-    color_map = {
-        "✓ Completed": "green"
-    }
-
-    fig.for_each_trace(
-        lambda trace: trace.update(
-            marker_color=color_map.get(
-                trace.name,
-                trace.marker.color
-            )
-        )
-        if trace.name in color_map
-        else None
-    )
-
-
-        fig.update_yaxes(
+    # Reverse task order
+    fig.update_yaxes(
         autorange="reversed",
         tickfont=dict(size=10),
         showgrid=True,
@@ -75,24 +59,20 @@ def make_gantt(df):
     )
 
 
+    # Daily X-axis with grid lines
     fig.update_xaxes(
-        dtick="D1",                  # every day
-        tickformat="%d\n%b",          # day + month
+        dtick="D1",
+        tickformat="%d\n%b",
         tickfont=dict(size=9),
-
         showgrid=True,
-        gridwidth=1,
-
-        minor=dict(
-            showgrid=True,
-            dtick=12*60*60*1000
-        )
+        gridwidth=1
     )
 
 
+    # Layout
     fig.update_layout(
 
-        height=max(400, len(df)*32),
+        height=max(400, len(df) * 32),
 
         margin=dict(
             l=170,
@@ -109,6 +89,12 @@ def make_gantt(df):
 
         hovermode="closest"
     )
+
+
+    # Make completed tasks green
+    for trace in fig.data:
+        if trace.name == "✓ Completed":
+            trace.marker.color = "green"
 
 
     return fig
