@@ -34,20 +34,20 @@ def make_gantt(df):
     ] = "✓ Completed"
 
 
-    fig = px.timeline(
-        df,
-        x_start="Start",
-        x_end="Display_Finish",
-        y="Task",
-        color="Color",
-        hover_data=[
-            "Phase",
-            "Assigned",
-            "Progress",
-            "Start",
-            "Finish"
-        ],
-    )
+    df["Task_label"] = (
+    df["Task"]
+    + "  ("
+    + df["Progress"].astype(str)
+    + ")"
+)
+
+
+fig = px.timeline(
+    df,
+    x_start="Start",
+    x_end="Display_Finish",
+    y="Task_label",
+    color="Color",
 
 
     # Reverse task order
