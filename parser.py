@@ -7,33 +7,40 @@ def normalize_progress(value):
     if value is None:
         return "0%"
 
+    # Debug: keep original value if needed
+    original = value
+
     try:
 
-        # Excel percentage stored as decimal
-        # Example: 1.0 = 100%, 0.5 = 50%
-        if isinstance(value, (float, int)):
+        # Numeric values from Excel
+        if isinstance(value, (int, float)):
 
-            if 0 <= value <= 1:
+            # Excel percentage format:
+            # 1 = 100%, 0.5 = 50%
+            if value <= 1:
                 return f"{round(value * 100)}%"
 
             return f"{round(value)}%"
 
 
-        # Text percentage
-        value = str(value).replace("%", "").strip()
+        # Text values
+        value = str(value).strip()
+
+        # Remove % symbol
+        value = value.replace("%", "")
 
         number = float(value)
 
-        if 0 <= number <= 1:
+        # If between 0 and 1, treat as Excel fraction
+        if number <= 1:
             number = number * 100
 
         return f"{round(number)}%"
 
 
     except Exception:
+
         return "0%"
-
-
 
 def parse_excel(filename):
 
