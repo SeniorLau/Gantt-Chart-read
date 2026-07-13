@@ -18,8 +18,14 @@ uploaded = st.file_uploader(
 if uploaded:
 
     df = parse_excel(uploaded)
-    st.write(df)
-    st.write(df.dtypes)
+    st.dataframe(df[[
+    "Phase",
+    "Task",
+    "Assigned",
+    "Progress",
+    "Start",
+    "Finish"
+    ]])
 
 
     if df.empty:
