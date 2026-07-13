@@ -9,14 +9,30 @@ def normalize_progress(value):
 
     try:
 
+        # Numeric values
         if isinstance(value, (int, float)):
 
+            # Excel percentage stored as decimal
+            # 1 = 100%, 0.5 = 50%
+            if 0 <= value <= 1:
+                return f"{round(value * 100)}%"
+
+            # Already percentage number
             return f"{round(value)}%"
 
 
-        text = str(value).replace("%", "").strip()
+        # Text values
+        text = str(value).strip()
 
-        return f"{round(float(text))}%"
+        text = text.replace("%", "")
+
+        number = float(text)
+
+        if 0 <= number <= 1:
+            number = number * 100
+
+        return f"{round(number)}%"
+
 
     except Exception:
 
@@ -26,7 +42,6 @@ def normalize_progress(value):
 
 def parse_excel(filename):
 
-    # Keep cached Excel values
     wb = load_workbook(
         filename,
         data_only=True
@@ -36,62 +51,71 @@ def parse_excel(filename):
 
 
     tasks = []
+
     phase = None
+
     header_found = False
 
 
     for row_number in range(1, ws.max_row + 1):
 
-        # Read actual cells
-        task_cell = ws.cell(row_number, 2)      # B
-        person_cell = ws.cell(row_number, 3)    # C
-        progress_cell = ws.cell(row_number, 4)  # D
-        start_cell = ws.cell(row_number, 5)     # E
-        finish_cell = ws.cell(row_number, 6)    # F
+        # Excel columns
+        # B = Task
+        # C = Assigned
+        # D = Progress
+        # E = Start
+        # F = Finish
+
+        task_cell = ws.cell(row_number, 2)
+        assigned_cell = ws.cell(row_number, 3)
+        progress_cell = ws.cell(row_number, 4)
+        start_cell = ws.cell(row_number, 5)
+        finish_cell = ws.cell(row_number, 6)
 
 
         b = task_cell.value
-        c = person_cell.value
+        c = assigned_cell.value
         d = progress_cell.value
-
-        # Handle Excel percentage formatting
-        if (
-            progress_cell.number_format
-            and "%"
-            in progress_cell.number_format
-        ):
-        
-            if isinstance(d, (int, float)):
-        d = d * 100
         e = start_cell.value
         f = finish_cell.value
 
 
-        # Find header
+
+        # Find table header
 
         if (
             str(b).strip() == "TAAK"
             and "TOEGEWEZEN" in str(c)
         ):
+
             header_found = True
             continue
+
 
 
         if not header_found:
             continue
 
 
-        # Stop at footer
 
-        if b and "Voeg nieuwe rijen" in str(b):
+        # Stop at bottom
+
+        if (
+            b
+            and "Voeg nieuwe rijen" in str(b)
+        ):
             break
 
+
+
+        # Ignore empty rows
 
         if b is None:
             continue
 
 
-        # Dates
+
+        # Convert dates
 
         start = pd.to_datetime(
             e,
@@ -106,34 +130,66 @@ def parse_excel(filename):
         )
 
 
+
         # Phase row
 
-        if pd.isna(start) and pd.isna(finish):
+        if (
+            pd.isna(start)
+            and pd.isna(finish)
+            and b
+        ):
 
             phase = str(b).strip()
 
             continue
 
 
+
         # Task row
 
-        if pd.notna(start) and pd.notna(finish):
+        if (
+            pd.notna(start)
+            and pd.notna(finish)
+        ):
+
+
+            # Handle Excel percentage formatting
+
+            progress_value = d
+
+            if (
+                "%" in str(progress_cell.number_format)
+                and isinstance(progress_value, (int, float))
+            ):
+
+                progress_value = progress_value * 100
+
+
 
             tasks.append(
                 {
                     "Phase": phase,
-                    "Task": str(b).strip(),
-                    "Assigned": str(c) if c else "Unknown",
 
-                    # keep for debugging
+                    "Task": str(b).strip(),
+
+                    "Assigned": (
+                        str(c).strip()
+                        if c
+                        else "Unknown"
+                    ),
+
                     "Progress_raw": d,
 
-                    "Progress": normalize_progress(d),
+                    "Progress": normalize_progress(
+                        progress_value
+                    ),
 
                     "Start": start,
-                    "Finish": finish
+
+                    "Finish": finish,
                 }
             )
+
 
 
     df = pd.DataFrame(tasks)
