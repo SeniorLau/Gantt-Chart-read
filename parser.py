@@ -61,6 +61,16 @@ def parse_excel(filename):
         b = task_cell.value
         c = person_cell.value
         d = progress_cell.value
+
+        # Handle Excel percentage formatting
+        if (
+            progress_cell.number_format
+            and "%"
+            in progress_cell.number_format
+        ):
+        
+            if isinstance(d, (int, float)):
+        d = d * 100
         e = start_cell.value
         f = finish_cell.value
 
