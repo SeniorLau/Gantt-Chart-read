@@ -48,6 +48,12 @@ def parse_excel(filename):
     )
 
     ws = wb.active
+    wb_formula = load_workbook(
+    filename,
+    data_only=False
+    )
+
+    ws_formula = wb_formula.active
 
 
     tasks = []
