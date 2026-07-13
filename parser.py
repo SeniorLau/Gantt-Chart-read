@@ -1,6 +1,26 @@
 from openpyxl import load_workbook
 import pandas as pd
 
+def normalize_progress(value):
+
+    if value is None:
+        return "0%"
+
+    try:
+        # Excel percentage stored as decimal
+        if isinstance(value, float) and value <= 1:
+            return f"{round(value*100)}%"
+
+        # Already percentage number
+        if isinstance(value, (int, float)):
+            return f"{round(value)}%"
+
+        # Text percentage
+        value = str(value).replace("%", "")
+        return f"{float(value):.0f}%"
+
+    except:
+        return "0%"
 
 def parse_excel(filename):
 
