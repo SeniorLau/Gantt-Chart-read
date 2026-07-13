@@ -9,11 +9,15 @@ def make_gantt(df, color_by="Assigned"):
 
     # Convert progress to numeric
     df["Progress_num"] = (
-        df["Progress"]
-        .astype(str)
-        .str.replace("%", "", regex=False)
-        .astype(float)
+    df["Progress"]
+    .str.replace("%","")
+    .astype(float)
     )
+
+    df.loc[
+    df["Progress_num"] == 100,
+    "Color"
+    ] = "Completed"
 
 
     # Make one-day tasks visible
