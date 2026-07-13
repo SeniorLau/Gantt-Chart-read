@@ -18,6 +18,8 @@ uploaded = st.file_uploader(
 if uploaded:
 
     df = parse_excel(uploaded)
+    st.write(df)
+    st.write(df.dtypes)
 
 
     if df.empty:
