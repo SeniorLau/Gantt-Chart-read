@@ -82,6 +82,18 @@ def parse_excel(filename):
         b = task_cell.value
         c = assigned_cell.value
         d = progress_cell.value
+        # Read progress from the original cell
+        progress_raw = ws_formula.cell(
+            row=row_number,
+            column=4
+        ).value
+        
+        
+        # If formula exists, try the cached value first
+        if isinstance(progress_raw, str) and progress_raw.startswith("="):
+            d = progress_cell.value
+        else:
+            d = progress_raw
         e = start_cell.value
         f = finish_cell.value
 
