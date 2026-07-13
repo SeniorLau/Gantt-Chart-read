@@ -37,7 +37,33 @@ def normalize_progress(value):
     except Exception:
 
         return "0%"
+def normalize_progress(value):
 
+    if value is None:
+        return "0%"
+
+    try:
+
+        # Numeric value from Excel
+        if isinstance(value, (int, float)):
+
+            # Your Excel format:
+            # entered 100 -> displayed 100%
+            return f"{round(value)}%"
+
+
+        # Text value
+        text = str(value).strip()
+
+        text = text.replace("%", "")
+
+        number = float(text)
+
+        return f"{round(number)}%"
+
+
+    except Exception:
+        return "0%"
 
 
 def parse_excel(filename):
