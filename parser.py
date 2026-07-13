@@ -11,23 +11,15 @@ def normalize_progress(value):
 
         if isinstance(value, (int, float)):
 
-            if 0 <= value <= 1:
-                return f"{round(value * 100)}%"
-
             return f"{round(value)}%"
 
 
         text = str(value).replace("%", "").strip()
 
-        number = float(text)
-
-        if 0 <= number <= 1:
-            number *= 100
-
-        return f"{round(number)}%"
-
+        return f"{round(float(text))}%"
 
     except Exception:
+
         return "0%"
 
 
