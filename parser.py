@@ -8,7 +8,6 @@ def normalize_progress(value):
         return "0%"
 
     try:
-
         value = float(value)
 
         # Excel percentage format:
@@ -22,6 +21,7 @@ def normalize_progress(value):
         return "0%"
 
 
+
 def parse_excel(filename):
 
     wb = load_workbook(
@@ -31,13 +31,11 @@ def parse_excel(filename):
 
     ws = wb.active
 
-
     tasks = []
 
-    phase = "Unknown"
+    phase = "Unknown phase"
 
     header_found = False
-
 
 
     for r in range(1, ws.max_row + 1):
@@ -49,8 +47,7 @@ def parse_excel(filename):
         finish = ws.cell(r, 6).value     # F
 
 
-
-        # Find header
+        # Find header row
 
         if (
             str(task).strip() == "TAAK"
@@ -64,8 +61,7 @@ def parse_excel(filename):
             continue
 
 
-
-        # End of file
+        # Stop at end marker
 
         if (
             task
@@ -74,10 +70,8 @@ def parse_excel(filename):
             break
 
 
-
         if task is None:
             continue
-
 
 
         start_date = pd.to_datetime(
@@ -93,7 +87,6 @@ def parse_excel(filename):
         )
 
 
-
         # Phase row
 
         if (
@@ -104,7 +97,6 @@ def parse_excel(filename):
             phase = str(task).strip()
 
             continue
-
 
 
         # Task row
@@ -126,17 +118,17 @@ def parse_excel(filename):
                         else "Unknown"
                     ),
 
-                    "Progress": normalize_progress(progress),
+                    "Progress": normalize_progress(
+                        progress
                     ),
 
                     "Start": start_date,
 
-                    "Finish": finish_date
+                    "Finish": finish_date,
                 }
             )
 
 
     df = pd.DataFrame(tasks)
-
 
     return df
