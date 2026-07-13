@@ -9,14 +9,16 @@ def normalize_progress(value):
 
     try:
 
+        # Excel value entered as 100 and formatted as %
         if isinstance(value, (int, float)):
             return f"{round(value)}%"
 
-        text = str(value).replace("%", "").strip()
+        text = str(value).strip()
+        text = text.replace("%", "")
 
         return f"{round(float(text))}%"
 
-    except:
+    except Exception:
         return "0%"
 
 
@@ -30,41 +32,30 @@ def parse_excel(filename):
 
     ws = wb.active
 
+
     tasks = []
 
-    phase = "Unknown phase"
+    phase = "Unknown"
 
     header_found = False
 
 
+
     for r in range(1, ws.max_row + 1):
 
-        # Current Excel structure:
-        # A = Assigned
-        # B = Progress
-        # C = Start
-        # D = End
-
-        assigned = ws.cell(r, 1).value
-        progress = ws.cell(r, 2).value
-        start = ws.cell(r, 3).value
-        finish = ws.cell(r, 4).value
+        task = ws.cell(r, 2).value       # B
+        assigned = ws.cell(r, 3).value   # C
+        progress = ws.cell(r, 4).value   # D
+        start = ws.cell(r, 5).value      # E
+        finish = ws.cell(r, 6).value     # F
 
 
-        # Detect header
 
-        row_text = " ".join(
-            [
-                str(ws.cell(r,c).value)
-                for c in range(1,5)
-                if ws.cell(r,c).value
-            ]
-        )
-
+        # Find header
 
         if (
-            "TOEGEWEZEN" in row_text
-            and "VOORTGANG" in row_text
+            str(task).strip() == "TAAK"
+            and "TOEGEWEZEN" in str(assigned)
         ):
             header_found = True
             continue
@@ -74,15 +65,20 @@ def parse_excel(filename):
             continue
 
 
-        # Empty rows
+
+        # End of file
 
         if (
-            assigned is None
-            and progress is None
-            and start is None
-            and finish is None
+            task
+            and "Voeg nieuwe rijen" in str(task)
         ):
+            break
+
+
+
+        if task is None:
             continue
+
 
 
         start_date = pd.to_datetime(
@@ -98,6 +94,22 @@ def parse_excel(filename):
         )
 
 
+
+        # Phase row
+
+        if (
+            pd.isna(start_date)
+            and pd.isna(finish_date)
+        ):
+
+            phase = str(task).strip()
+
+            continue
+
+
+
+        # Task row
+
         if (
             pd.notna(start_date)
             and pd.notna(finish_date)
@@ -107,11 +119,17 @@ def parse_excel(filename):
                 {
                     "Phase": phase,
 
-                    "Task": f"Task {len(tasks)+1}",
+                    "Task": str(task).strip(),
 
-                    "Assigned": str(assigned),
+                    "Assigned": (
+                        str(assigned).strip()
+                        if assigned
+                        else "Unknown"
+                    ),
 
-                    "Progress": normalize_progress(progress),
+                    "Progress": normalize_progress(
+                        progress
+                    ),
 
                     "Start": start_date,
 
@@ -120,4 +138,7 @@ def parse_excel(filename):
             )
 
 
-    return pd.DataFrame(tasks)
+    df = pd.DataFrame(tasks)
+
+
+    return df
