@@ -18,7 +18,10 @@ uploaded = st.file_uploader(
 if uploaded:
 
     df = parse_excel(uploaded)
-    st.write(df)
+
+    if df.empty:
+        st.error("No tasks detected in Excel. Check the template structure.")
+        st.stop()
 
     st.sidebar.header("Filters")
 
