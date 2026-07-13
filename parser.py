@@ -43,9 +43,9 @@ def normalize_progress(value):
 def parse_excel(filename):
 
     wb = load_workbook(
-        filename,
-        data_only=True
-    )
+    filename,
+    data_only=False
+)
 
     ws = wb.active
 
