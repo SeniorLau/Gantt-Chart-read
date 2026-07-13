@@ -6,7 +6,7 @@ def make_gantt(df):
 
     df = df.copy()
 
-    # Convert progress to numeric %
+    # Convert progress to number
     df["Progress_num"] = (
         df["Progress"]
         .astype(str)
@@ -14,8 +14,7 @@ def make_gantt(df):
         .astype(float)
     )
 
-    # Create display finish date
-    # One-day tasks get a small visible width
+    # Make one-day tasks visible
     df["Display_Finish"] = df["Finish"]
 
     one_day = df["Start"] == df["Finish"]
@@ -25,18 +24,14 @@ def make_gantt(df):
         + pd.Timedelta(hours=12)
     )
 
+    # Create color category
+    df["Color"] = df["Assigned"].astype(str)
 
-    # Create status category
-    def status(x):
-        if x >= 100:
-            return "Completed"
-        elif x > 0:
-            return "In progress"
-        else:
-            return "Not started"
-
-
-    df["Status"] = df["Progress_num"].apply(status)
+    # Completed tasks become green
+    df.loc[
+        df["Progress_num"] >= 100,
+        "Color"
+    ] = "✓ Completed"
 
 
     fig = px.timeline(
@@ -44,7 +39,7 @@ def make_gantt(df):
         x_start="Start",
         x_end="Display_Finish",
         y="Task",
-        color="Status",
+        color="Color",
         hover_data=[
             "Phase",
             "Assigned",
@@ -52,13 +47,23 @@ def make_gantt(df):
             "Start",
             "Finish"
         ],
-        category_orders={
-            "Status": [
-                "Completed",
-                "In progress",
-                "Not started"
-            ]
-        }
+    )
+
+
+    # Force completed color to green
+    color_map = {
+        "✓ Completed": "green"
+    }
+
+    fig.for_each_trace(
+        lambda trace: trace.update(
+            marker_color=color_map.get(
+                trace.name,
+                trace.marker.color
+            )
+        )
+        if trace.name in color_map
+        else None
     )
 
 
@@ -72,7 +77,7 @@ def make_gantt(df):
         height=max(350, len(df)*30),
 
         margin=dict(
-            l=150,
+            l=160,
             r=10,
             t=25,
             b=30
@@ -85,9 +90,7 @@ def make_gantt(df):
 
         bargap=0.25,
 
-        legend_title_text="Status",
-
-        showlegend=True
+        legend_title_text="Assigned"
     )
 
 
