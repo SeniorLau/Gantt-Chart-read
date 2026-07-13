@@ -7,32 +7,28 @@ def normalize_progress(value):
     if value is None:
         return "0%"
 
-    # Debug: keep original value if needed
-    original = value
-
     try:
 
-        # Numeric values from Excel
+        # Excel numeric percentage
+        # 1.0 = 100%
+        # 0.5 = 50%
         if isinstance(value, (int, float)):
 
-            # Excel percentage format:
-            # 1 = 100%, 0.5 = 50%
-            if value <= 1:
+            if 0 <= value <= 1:
                 return f"{round(value * 100)}%"
 
             return f"{round(value)}%"
 
 
         # Text values
-        value = str(value).strip()
+        text = str(value).strip()
 
-        # Remove % symbol
-        value = value.replace("%", "")
+        # Remove percentage sign
+        text = text.replace("%", "")
 
-        number = float(value)
+        number = float(text)
 
-        # If between 0 and 1, treat as Excel fraction
-        if number <= 1:
+        if 0 <= number <= 1:
             number = number * 100
 
         return f"{round(number)}%"
@@ -41,6 +37,8 @@ def normalize_progress(value):
     except Exception:
 
         return "0%"
+
+
 
 def parse_excel(filename):
 
@@ -59,18 +57,18 @@ def parse_excel(filename):
     header_found = False
 
 
+
     for row_number, row in enumerate(
         ws.iter_rows(values_only=True),
         start=1
     ):
 
-
-        # Excel columns:
-        # B = Task
-        # C = Assigned
-        # D = Progress
-        # E = Start
-        # F = Finish
+        # Columns:
+        # B Task
+        # C Assigned
+        # D Progress
+        # E Start
+        # F Finish
 
         b = row[1] if len(row) > 1 else None
         c = row[2] if len(row) > 2 else None
@@ -80,12 +78,13 @@ def parse_excel(filename):
 
 
 
-        # Locate real project table header
+        # Find header row
 
         if (
             str(b).strip() == "TAAK"
             and "TOEGEWEZEN" in str(c)
         ):
+
             header_found = True
             continue
 
@@ -106,14 +105,14 @@ def parse_excel(filename):
 
 
 
-        # Ignore empty rows
+        # Skip empty rows
 
         if b is None:
             continue
 
 
 
-        # Convert dates safely
+        # Convert dates
 
         start = pd.to_datetime(
             e,
@@ -129,11 +128,12 @@ def parse_excel(filename):
 
 
 
-        # Detect phase rows
+        # Phase row:
+        # text in B but no dates
 
         if (
-            not pd.notna(start)
-            and not pd.notna(finish)
+            pd.isna(start)
+            and pd.isna(finish)
             and b
         ):
 
@@ -143,7 +143,7 @@ def parse_excel(filename):
 
 
 
-        # Detect task rows
+        # Task row
 
         if (
             pd.notna(start)
@@ -151,28 +151,26 @@ def parse_excel(filename):
         ):
 
             tasks.append(
-    {
-        "Phase": phase,
+                {
+                    "Phase": phase,
 
-        "Task": str(b).strip(),
+                    "Task": str(b).strip(),
 
-        "Assigned": (
-            str(c).strip()
-            if c
-            else "Unknown"
-        ),
+                    "Assigned": (
+                        str(c).strip()
+                        if c
+                        else "Unknown"
+                    ),
 
-        # keep original Excel value for checking
-        "Progress_raw": d,
+                    "Progress_raw": d,
 
-        # formatted progress for chart/table
-        "Progress": normalize_progress(d),
+                    "Progress": normalize_progress(d),
 
-        "Start": start,
+                    "Start": start,
 
-        "Finish": finish,
-    }
-)
+                    "Finish": finish,
+                }
+            )
 
 
 
