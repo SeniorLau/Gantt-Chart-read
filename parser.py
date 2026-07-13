@@ -9,9 +9,6 @@ def normalize_progress(value):
 
     try:
 
-        # Excel numeric percentage
-        # 1.0 = 100%
-        # 0.5 = 50%
         if isinstance(value, (int, float)):
 
             if 0 <= value <= 1:
@@ -20,99 +17,79 @@ def normalize_progress(value):
             return f"{round(value)}%"
 
 
-        # Text values
-        text = str(value).strip()
-
-        # Remove percentage sign
-        text = text.replace("%", "")
+        text = str(value).replace("%", "").strip()
 
         number = float(text)
 
         if 0 <= number <= 1:
-            number = number * 100
+            number *= 100
 
         return f"{round(number)}%"
 
 
     except Exception:
-
         return "0%"
 
 
 
 def parse_excel(filename):
 
+    # Keep cached Excel values
     wb = load_workbook(
-    filename,
-    data_only=False
+        filename,
+        data_only=True
     )
 
     ws = wb.active
 
 
     tasks = []
-
     phase = None
-
     header_found = False
 
 
+    for row_number in range(1, ws.max_row + 1):
 
-    for row_number, row in enumerate(
-        ws.iter_rows(values_only=True),
-        start=1
-    ):
-
-        # Columns:
-        # B Task
-        # C Assigned
-        # D Progress
-        # E Start
-        # F Finish
-
-        b = row[1] if len(row) > 1 else None
-        c = row[2] if len(row) > 2 else None
-        d = row[3] if len(row) > 3 else None
-        e = row[4] if len(row) > 4 else None
-        f = row[5] if len(row) > 5 else None
+        # Read actual cells
+        task_cell = ws.cell(row_number, 2)      # B
+        person_cell = ws.cell(row_number, 3)    # C
+        progress_cell = ws.cell(row_number, 4)  # D
+        start_cell = ws.cell(row_number, 5)     # E
+        finish_cell = ws.cell(row_number, 6)    # F
 
 
+        b = task_cell.value
+        c = person_cell.value
+        d = progress_cell.value
+        e = start_cell.value
+        f = finish_cell.value
 
-        # Find header row
+
+        # Find header
 
         if (
             str(b).strip() == "TAAK"
             and "TOEGEWEZEN" in str(c)
         ):
-
             header_found = True
             continue
-
 
 
         if not header_found:
             continue
 
 
+        # Stop at footer
 
-        # End of planning
-
-        if (
-            b
-            and "Voeg nieuwe rijen" in str(b)
-        ):
+        if b and "Voeg nieuwe rijen" in str(b):
             break
 
-
-
-        # Skip empty rows
 
         if b is None:
             continue
 
 
-
-        # Convert dates
+        # Dates
 
         start = pd.to_datetime(
             e,
@@ -127,51 +104,34 @@ def parse_excel(filename):
         )
 
 
+        # Phase row
 
-        # Phase row:
-        # text in B but no dates
-
-        if (
-            pd.isna(start)
-            and pd.isna(finish)
-            and b
-        ):
+        if pd.isna(start) and pd.isna(finish):
 
             phase = str(b).strip()
 
             continue
 
 
-
         # Task row
 
-        if (
-            pd.notna(start)
-            and pd.notna(finish)
-        ):
+        if pd.notna(start) and pd.notna(finish):
 
             tasks.append(
                 {
                     "Phase": phase,
-
                     "Task": str(b).strip(),
+                    "Assigned": str(c) if c else "Unknown",
 
-                    "Assigned": (
-                        str(c).strip()
-                        if c
-                        else "Unknown"
-                    ),
-
+                    # keep for debugging
                     "Progress_raw": d,
 
                     "Progress": normalize_progress(d),
 
                     "Start": start,
-
-                    "Finish": finish,
+                    "Finish": finish
                 }
             )
-
 
 
     df = pd.DataFrame(tasks)
