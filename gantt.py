@@ -67,30 +67,47 @@ def make_gantt(df):
     )
 
 
-    fig.update_yaxes(
+        fig.update_yaxes(
         autorange="reversed",
-        tickfont=dict(size=10)
+        tickfont=dict(size=10),
+        showgrid=True,
+        gridwidth=1
+    )
+
+
+    fig.update_xaxes(
+        dtick="D1",                  # every day
+        tickformat="%d\n%b",          # day + month
+        tickfont=dict(size=9),
+
+        showgrid=True,
+        gridwidth=1,
+
+        minor=dict(
+            showgrid=True,
+            dtick=12*60*60*1000
+        )
     )
 
 
     fig.update_layout(
-        height=max(350, len(df)*30),
+
+        height=max(400, len(df)*32),
 
         margin=dict(
-            l=160,
-            r=10,
-            t=25,
-            b=30
-        ),
-
-        xaxis=dict(
-            tickformat="%d/%m",
-            tickfont=dict(size=10)
+            l=170,
+            r=20,
+            t=40,
+            b=60
         ),
 
         bargap=0.25,
 
-        legend_title_text="Assigned"
+        plot_bgcolor="white",
+
+        legend_title_text="Assigned",
+
+        hovermode="closest"
     )
 
 
